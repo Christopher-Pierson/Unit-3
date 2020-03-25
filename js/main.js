@@ -67,11 +67,9 @@ window.onload = function(){
 
    // scale for circles center y coordinate
    var y = d3.scaleLinear()
-       .range([440, 95])
-       .domain([
-           minPop,
-           maxPop
-       ]);
+      // change scale to cover the entirety of the inner rectangle
+      .range([450, 50]) // was 440, 95
+      .domain([0, 700000]); // was minPop, maxPop
 
    // color scale generator
    var color = d3.scaleLinear()
@@ -109,5 +107,14 @@ window.onload = function(){
           return color(d.population);
       })
       .style("stroke", "#000"); // black circle stroke
-  
+
+  // create y axis generator
+  var yAxis = d3.axisLeft(y);
+
+  // create axis g element and add axis
+  var axis = container.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(50, 0)")
+      .call(yAxis);
+
 };
