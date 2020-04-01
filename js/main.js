@@ -11,8 +11,15 @@ function setMap(){
     Promise.all(promises).then(callback);
 
     function callback(data){
-	     dc = data[0];
+
+       dc = data[0];
        console.log(dc);
+
+       // translate europe TopoJSON
+       var dcSectors = topojson.feature(dc, dc.objects.DC_PopoSec_Crime19);
+
+        // examine the results
+        console.log(dcSectors);
 
     };
 };
