@@ -19,10 +19,10 @@ function setMap(){
 
     // create Albers equal area conic projection centered on Washington, DC
     var projection = d3.geoAlbers()
-      .center([-77.5, 38.75])
-      .rotate([0, 0, 0])
-      .parallels([38.37, 39.13])
-      .scale(50000)
+      .center([0, 38.91]) //latitude of center
+      .rotate([77.02, 0, 0]) //longitude of center * -1
+      .parallels([38.88, 39.94]) //adjusted to minimize distortion
+      .scale(100000)
       .translate([width / 2, height / 2]);
 
     var path = d3.geoPath()
@@ -30,34 +30,44 @@ function setMap(){
 
     // use Promise.all to parallelize asynchronous data loading
     var promises = [];
-    promises.push(d3.json("data/DC_PopoSec_Crime19.topojson")); //load background spatial data
+    promises.push(d3.json("data/DC_PopoSec_Crime19.topojson")); // load DC data
+    promises.push(d3.json("data/SurroundingStates.topojson")); // load background states spatial data
     Promise.all(promises).then(callback);
 
     function callback(data){
 
        dc = data[0];
+       states = data[1];
        console.log(dc);
+       console.log(states);
 
-       // translate europe TopoJSON
-       var dcSectors = topojson.feature(dc, dc.objects.DC_PopoSec_Crime19);
+       // translate TopoJSONs
+       var dcSectors = topojson.feature(dc, dc.objects.DC_PopoSec_Crime19).features;
+       var surroundStates = topojson.feature(states, states.objects.SurroundingStates).features;
 
        // examine the results
        console.log(dcSectors);
+       console.log(surroundStates);
 
-       //add Europe countries to map
-       var countries = map.append("path")
-          .datum(dcSectors)
-          .attr("class", "SECTOR")
+       //add states to map
+       var state = map.selectAll(".state")
+          .data(surroundStates)
+          .enter()
+          .append("path")
+          .attr("class", function(d){
+            return "state " + d.properties.name;
+          })
           .attr("d", path);
 
-        // //add Europe countries to map
-        // var sectors = map.selectAll(".sectors")
-        //   .datum(dcSectors)
-        //   .data()
-        //   .enter()
-        //   .append("path")
-        //   .attr()
-        //   .attr("d", path);
+       //add DC Sectors to map
+       var sectors = map.selectAll(".sectors")
+          .data(dcSectors)
+          .enter()
+          .append("path")
+          .attr("class", function(d){
+            return "sectors " + d.properties.SECTOR;
+          })
+          .attr("d", path);
 
 
     };
