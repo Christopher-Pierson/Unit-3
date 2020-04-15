@@ -15,10 +15,44 @@
 
 .title {
     font-family: sans-serif;
-    font-size: 1.5em;
+    font-size: 1.25em;
     font-weight: bold;
 }
 
+.map {
+    border: medium solid #999;
+    margin: 10px 0 0 20px;
+}
+
+..chart {
+    float: right;
+    margin: 7px 20px 0 0;
+}
+
+.chartTitle {
+    fill: white;
+    font-family: sans-serif;
+    font-size: 1.25em;
+    font-weight: bold;
+}
+
+.chartBackground {
+    fill: black;
+}
+
+.chartFrame {
+    fill: none;
+    stroke: #999;
+    stroke-width: 3px;
+    shape-rendering: crispEdges;
+}
+
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 0.8em;
+    fill: #999;
+}
 
 .state {
     stroke:#3498DB  ;

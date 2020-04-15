@@ -7,7 +7,10 @@
 
 // pseudo-global variables
 var attrArray = ["ADW_per1k", "MVT_per1k", "BRG_per1k", "Rob_per1k", "Hom_per1k", "SA_per1k"]; //list of attributes
-var expressed = attrArray[4]; // initial attribute
+var fieldNum = 4 // set index of interest from arrays
+var expressed = attrArray[fieldNum]; // initial attribute
+var fieldNameArray = ["Assaults with a Deadly Weapon", "Motor Vehicle Thefts", "Burglaries", "Robberies", "Homicides", "Sexual Assaults"]; //list of attributes
+var alias = fieldNameArray[fieldNum]; // initial attribute
 
 // begin script when window loads
 window.onload = setMap();
@@ -16,8 +19,8 @@ window.onload = setMap();
 function setMap(){
 
     // map frame dimensions
-    var width = 960,
-        height = 460;
+    var width = window.innerWidth * 0.5,
+        height = 469;
 
     // create new svg container for the map
     var map = d3.select("body")
@@ -69,6 +72,9 @@ function setMap(){
 
       // add enumeration units to the map
       setEnumerationUnits(dcSectors, map, path, colorScale);
+
+      // add coordinated visualization to the map
+      setChart(dc.objects.DC_PopoSec_Crime19.geometries, colorScale);
     };
 }; // end of setMap
 
@@ -91,6 +97,87 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
             }
       });
 }; // end of setEnumerationUnits
+
+// function to create coordinated bar chart
+function setChart(dcSectors, colorScale){
+    // chart frame dimensions
+    var chartWidth = window.innerWidth * 0.425,
+        chartHeight = 473,
+        leftPadding = 25,
+        rightPadding = 2,
+        topBottomPadding = 5,
+        chartInnerWidth = chartWidth - leftPadding - rightPadding,
+        chartInnerHeight = chartHeight - topBottomPadding * 2,
+        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+
+    // create a second svg element to hold the bar chart
+    var chart = d3.select("body")
+        .append("svg")
+        .attr("width", chartWidth)
+        .attr("height", chartHeight)
+        .attr("class", "chart");
+
+    // create a rectangle for chart background fill
+    var chartBackground = chart.append("rect")
+        .attr("class", "chartBackground")
+        .attr("width", chartInnerWidth)
+        .attr("height", chartInnerHeight)
+        .attr("transform", translate);
+
+    //create a scale to size bars proportionally to frame
+    var yScale = d3.scaleLinear()
+        .range([463, 0])
+        .domain([0, 10]);
+
+    // set bars for each province
+    var bars = chart.selectAll(".bar")
+        .data(dcSectors)
+        .enter()
+        .append("rect")
+        .sort(function(a, b){
+            return a.properties[expressed]-b.properties[expressed]
+        })
+        .attr("class", function(d){
+            return "bar " + d.properties;
+        })
+        .attr("width", chartInnerWidth / dcSectors.length - 1)
+        .attr("x", function(d, i){
+            return i * (chartInnerWidth / dcSectors.length) + leftPadding;
+        })
+        .attr("height", function(d){
+            return 463 - yScale(parseFloat(d.properties[expressed]));
+        })
+        .attr("y", function(d){
+            return yScale(parseFloat(d.properties[expressed])) + topBottomPadding;
+        })
+        .style("fill", function(d){
+            return colorScale(d.properties[expressed]);
+        });
+
+    // create a text element for the chart title
+    var chartTitle = chart.append("text")
+        .attr("x", 40)
+        .attr("y", 40)
+        .attr("class", "chartTitle")
+        .text("Number of " + alias + " (per 1,000 people) in 2019");
+
+    //create vertical axis generator
+    var yAxis = d3.axisLeft()
+        .scale(yScale);
+
+    //place axis
+    var axis = chart.append("g")
+        .attr("class", "axis")
+        .attr("transform", translate)
+        .call(yAxis);
+
+    //create frame for chart border
+    var chartFrame = chart.append("rect")
+        .attr("class", "chartFrame")
+        .attr("width", chartInnerWidth)
+        .attr("height", chartInnerHeight)
+        .attr("transform", translate);
+}; // end of setChart
 
 // function to create color scale generator
 function makeColorScale(data){
