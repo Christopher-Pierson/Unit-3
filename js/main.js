@@ -9,7 +9,7 @@
 var attrArray = ["ADW_per1k", "MVT_per1k", "BRG_per1k", "Rob_per1k", "Hom_per1k", "SA_per1k"]; //list of attributes
 var fieldNum = 4 // set index of interest from arrays
 var expressed = attrArray[fieldNum]; // initial attribute
-var fieldNameArray = ["Assaults with a Deadly Weapon", "Motor Vehicle Thefts", "Burglaries", "Robberies", "Homicides", "Sexual Assaults"]; //list of attributes
+var fieldNameArray = ["Assaults w/ Deadly Weapon", "Motor Vehicle Thefts", "Burglaries", "Robberies", "Homicides", "Sexual Assaults"]; //list of attributes
 var alias = fieldNameArray[fieldNum]; // initial attribute
 
 // begin script when window loads
@@ -20,7 +20,7 @@ function setMap(){
 
     // map frame dimensions
     var width = window.innerWidth * 0.5,
-        height = 469;
+        height = 463;
 
     // create new svg container for the map
     var map = d3.select("body")
@@ -75,6 +75,8 @@ function setMap(){
 
       // add coordinated visualization to the map
       setChart(dc.objects.DC_PopoSec_Crime19.geometries, colorScale);
+
+      createDropdown()
     };
 }; // end of setMap
 
@@ -97,6 +99,28 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
             }
       });
 }; // end of setEnumerationUnits
+
+// function to create a dropdown menu for attribute selection
+function createDropdown(){
+    // add select element
+    var dropdown = d3.select("body")
+        .append("select")
+        .attr("class", "dropdown");
+
+    // add initial option
+    var titleOption = dropdown.append("option")
+        .attr("class", "titleOption")
+        .attr("disabled", "true")
+        .text("Select Attribute");
+
+    // add attribute name options
+    var attrOptions = dropdown.selectAll("attrOptions")
+        .data(fieldNameArray)
+        .enter()
+        .append("option")
+        .attr("value", function(d){ return d })
+        .text(function(d){ return d });
+};
 
 // function to create coordinated bar chart
 function setChart(dcSectors, colorScale){
