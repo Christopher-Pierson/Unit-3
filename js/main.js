@@ -12,6 +12,21 @@ var expressed = attrArray[fieldNum]; // initial attribute
 var fieldNameArray = ["Assaults w/ Deadly Weapon", "Motor Vehicle Thefts", "Burglaries", "Robberies", "Homicides", "Sexual Assaults"]; //list of attributes
 var alias = fieldNameArray[fieldNum]; // initial attribute
 
+// chart frame dimensions
+var chartWidth = window.innerWidth * 0.425,
+    chartHeight = 473,
+    leftPadding = 25,
+    rightPadding = 2,
+    topBottomPadding = 5,
+    chartInnerWidth = chartWidth - leftPadding - rightPadding,
+    chartInnerHeight = chartHeight - topBottomPadding * 2,
+    translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+
+// create a scale to size bars proportionally to frame and for axis
+var yScale = d3.scaleLinear()
+    .range([463, 0])
+    .domain([0, 10]);
+
 // begin script when window loads
 window.onload = setMap();
 
@@ -125,38 +140,8 @@ function createDropdown(dcSectors){
         .text(function(d){ return d });
 };
 
-// dropdown change listener handler
-function changeAttribute(attribute, dcSectors){
-    // change the expressed attribute
-    expressed = attribute;
-
-    // recreate the color scale
-    var colorScale = makeColorScale(dcSectors);
-
-    // recolor enumeration units
-    var regions = d3.selectAll(".sectors")
-        .style("fill", function(d){
-            var value = d.properties[expressed];
-            if(value) {
-            	return colorScale(value);
-            } else {
-            	return "#ccc";
-            }
-    });
-};
-
 // function to create coordinated bar chart
 function setChart(dcSectors, colorScale){
-    // chart frame dimensions
-    var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 473,
-        leftPadding = 25,
-        rightPadding = 2,
-        topBottomPadding = 5,
-        chartInnerWidth = chartWidth - leftPadding - rightPadding,
-        chartInnerHeight = chartHeight - topBottomPadding * 2,
-        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
-
     // create a second svg element to hold the bar chart
     var chart = d3.select("body")
         .append("svg")
@@ -170,11 +155,6 @@ function setChart(dcSectors, colorScale){
         .attr("width", chartInnerWidth)
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
-
-    //create a scale to size bars proportionally to frame
-    var yScale = d3.scaleLinear()
-        .range([463, 0])
-        .domain([0, 10]);
 
     // set bars for each province
     var bars = chart.selectAll(".bar")
@@ -208,23 +188,82 @@ function setChart(dcSectors, colorScale){
         .attr("class", "chartTitle")
         .text("Number of " + alias + " (per 1,000 people) in 2019");
 
-    //create vertical axis generator
+    // create vertical axis generator
     var yAxis = d3.axisLeft()
         .scale(yScale);
 
-    //place axis
+    // place axis
     var axis = chart.append("g")
         .attr("class", "axis")
         .attr("transform", translate)
         .call(yAxis);
 
-    //create frame for chart border
+    // create frame for chart border
     var chartFrame = chart.append("rect")
         .attr("class", "chartFrame")
         .attr("width", chartInnerWidth)
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
+
+    // set bar positions, heights, and colors
+    updateChart(bars, dcSectors.length, colorScale);
 }; // end of setChart
+
+// dropdown change listener handler
+function changeAttribute(attribute, dcSectors){
+    // change the expressed attribute
+    expressed = attribute;
+
+    // recreate the color scale
+    var colorScale = makeColorScale(dcSectors);
+
+    // recolor enumeration units
+    var sectors = d3.selectAll(".sectors")
+        .style("fill", function(d){
+            var value = d.properties[expressed];
+            if(value) {
+            	return colorScale(value);
+            } else {
+            	return "#ccc";
+            }
+    });
+
+    // re-sort, resize, and recolor bars
+    var bars = d3.selectAll(".bar")
+        //re-sort bars
+        .sort(function(a, b){
+            return b.properties[expressed] - a.properties[expressed];
+        });
+
+        updateChart(bars, dcSectors.length, colorScale);
+}; //end of changeAttribute
+
+// function to position, size, and color bars in chart
+function updateChart(bars, n, colorScale){
+    //position bars
+    bars.attr("x", function(d, i){
+        return i * (chartInnerWidth / n) + leftPadding;
+        })
+        // size/resize bars
+        .attr("height", function(d, i){
+            return 463 - yScale(parseFloat(d.properties[expressed]));
+        })
+        .attr("y", function(d, i){
+            return yScale(parseFloat(d.properties[expressed])) + topBottomPadding;
+        })
+        // color/recolor bars
+        .style("fill", function(d){
+            var value = d.properties[expressed];
+            if(value) {
+            	return colorScale(value);
+            } else {
+            	return "#ccc";
+            }
+        });
+
+    var chartTitle = d3.select(".chartTitle")
+        .text("Number of " + alias + " (per 1,000 people) in 2019");
+}; // end of updateChart
 
 // function to create color scale generator
 function makeColorScale(data){
