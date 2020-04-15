@@ -22,11 +22,11 @@
 
 .state {
     stroke:#3498DB  ;
-    stroke-width: .4px;
+    stroke-width: 5px;
 }
 
 .sectors {
     fill: #FFF;
-    stroke: #CCC;
+    stroke: #000;
     stroke-width: .4px;
 }

@@ -1,5 +1,14 @@
 /* Javascript by Christopher Pierson, 2020 */
 
+//"use strict"; // produceds error if incorrectly attempting to create global variable
+
+// self-executing anonymous wrapper function
+(function(){
+
+// pseudo-global variables
+var attrArray = ["ADW_per1k", "MVT_per1k", "BRG_per1k", "Rob_per1k", "Hom_per1k", "SA_per1k"]; //list of attributes
+var expressed = attrArray[4]; // initial attribute
+
 // begin script when window loads
 window.onload = setMap();
 
@@ -36,20 +45,16 @@ function setMap(){
 
     function callback(data){
 
-       dc = data[0];
-       states = data[1];
-       console.log(dc);
-       console.log(states);
+       var dc = data[0];
+       var states = data[1];
+       //console.log(dc);
+       //console.log(states);
 
        // translate TopoJSONs
        var dcSectors = topojson.feature(dc, dc.objects.DC_PopoSec_Crime19).features;
        var surroundStates = topojson.feature(states, states.objects.SurroundingStates).features;
 
-       // examine the results
-       console.log(dcSectors);
-       console.log(surroundStates);
-
-       //add states to map
+       // add states to map
        var state = map.selectAll(".state")
           .data(surroundStates)
           .enter()
@@ -59,16 +64,68 @@ function setMap(){
           })
           .attr("d", path);
 
-       //add DC Sectors to map
-       var sectors = map.selectAll(".sectors")
-          .data(dcSectors)
-          .enter()
-          .append("path")
-          .attr("class", function(d){
-            return "sectors " + d.properties.SECTOR;
-          })
-          .attr("d", path);
+      // create the color scale
+      var colorScale = makeColorScale(dc.objects.DC_PopoSec_Crime19.geometries);
 
-
+      // add enumeration units to the map
+      setEnumerationUnits(dcSectors, map, path, colorScale);
     };
-};
+}; // end of setMap
+
+function setEnumerationUnits(dcSectors, map, path, colorScale){
+    // add DC police sectors to map
+    var sectors = map.selectAll(".sectors")
+      .data(dcSectors)
+      .enter()
+      .append("path")
+      .attr("class", function(d){
+        return "sectors " + d.properties.SECTOR;
+      })
+      .attr("d", path)
+      .style("fill", function(d){
+            var value = d.properties[expressed];
+            if(value) {
+            	return colorScale(d.properties[expressed]);
+            } else {
+            	return "#ccc";
+            }
+      });
+}; // end of setEnumerationUnits
+
+// function to create color scale generator
+function makeColorScale(data){
+    var colorClasses = [
+        "#ffffb2",
+        "#fecc5c",
+        "#fd8d3c",
+        "#f03b20",
+        "#bd0026"
+    ];
+
+    // create color scale generator
+    var colorScale = d3.scaleThreshold()
+        .range(colorClasses);
+
+    // build array of all values of the expressed attribute
+    var domainArray = [];
+    for (var i=0; i<data.length; i++){
+        var val = parseFloat(data[i].properties[expressed]);
+        domainArray.push(val);
+    };
+
+    // cluster data using ckmeans clustering algorithm to create natural breaks
+    var clusters = ss.ckmeans(domainArray, 5);
+    // reset domain array to cluster minimums
+    domainArray = clusters.map(function(d){
+        return d3.min(d);
+    });
+    // remove first value from domain array to create class breakpoints
+    domainArray.shift();
+
+    // assign array of last 4 cluster minimums as domain
+    colorScale.domain(domainArray);
+
+    return colorScale;
+}; // end of makeColorScale
+
+})(); // end main.js
