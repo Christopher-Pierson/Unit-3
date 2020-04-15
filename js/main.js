@@ -76,7 +76,7 @@ function setMap(){
       // add coordinated visualization to the map
       setChart(dc.objects.DC_PopoSec_Crime19.geometries, colorScale);
 
-      createDropdown()
+      createDropdown(dcSectors)
     };
 }; // end of setMap
 
@@ -101,11 +101,14 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
 }; // end of setEnumerationUnits
 
 // function to create a dropdown menu for attribute selection
-function createDropdown(){
+function createDropdown(dcSectors){
     // add select element
     var dropdown = d3.select("body")
         .append("select")
-        .attr("class", "dropdown");
+        .attr("class", "dropdown")
+        .on("change", function(){
+            changeAttribute(this.value, dcSectors)
+        });
 
     // add initial option
     var titleOption = dropdown.append("option")
@@ -115,11 +118,31 @@ function createDropdown(){
 
     // add attribute name options
     var attrOptions = dropdown.selectAll("attrOptions")
-        .data(fieldNameArray)
+        .data(attrArray)
         .enter()
         .append("option")
         .attr("value", function(d){ return d })
         .text(function(d){ return d });
+};
+
+// dropdown change listener handler
+function changeAttribute(attribute, dcSectors){
+    // change the expressed attribute
+    expressed = attribute;
+
+    // recreate the color scale
+    var colorScale = makeColorScale(dcSectors);
+
+    // recolor enumeration units
+    var regions = d3.selectAll(".sectors")
+        .style("fill", function(d){
+            var value = d.properties[expressed];
+            if(value) {
+            	return colorScale(value);
+            } else {
+            	return "#ccc";
+            }
+    });
 };
 
 // function to create coordinated bar chart
