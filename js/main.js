@@ -7,9 +7,9 @@
 
 // pseudo-global variables
 var attrArray = ["ADW_per1k", "MVT_per1k", "BRG_per1k", "Rob_per1k", "Hom_per1k", "SA_per1k"]; //list of attributes
-var fieldNum = 4 // set index of interest from arrays
+var fieldNum = 0 // set index of interest from arrays
 var expressed = attrArray[fieldNum]; // initial attribute
-var fieldNameArray = ["Assaults w/ Deadly Weapon", "Motor Vehicle Thefts", "Burglaries", "Robberies", "Homicides", "Sexual Assaults"]; //list of attributes
+var fieldNameArray = {"ADW_per1k": "Assaults w/ Deadly Weapon", "MVT_per1k": "Motor Vehicle Thefts", "BRG_per1k": "Burglaries", "Rob_per1k": "Robberies", "Hom_per1k": "Homicides", "SA_per1k": "Sexual Assaults"}; //list of attributes
 var alias = fieldNameArray[fieldNum]; // initial attribute
 
 // chart frame dimensions
@@ -103,7 +103,7 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
       .enter()
       .append("path")
       .attr("class", function(d){
-        return "sectors " + d.properties.SECTOR;
+        return "sectors _" + d.properties.SECTOR;
       })
       .attr("d", path)
       .style("fill", function(d){
@@ -113,6 +113,9 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
             } else {
             	return "#ccc";
             }
+      })
+      .on("mouseover", function(d){
+            highlight(d.properties);
       });
 }; // end of setEnumerationUnits
 
@@ -157,7 +160,7 @@ function setChart(dcSectors, colorScale){
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
 
-    // set bars for each province
+    // set bars for each sector
     var bars = chart.selectAll(".bar")
         .data(dcSectors)
         .enter()
@@ -169,6 +172,7 @@ function setChart(dcSectors, colorScale){
             return "bar " + d.properties;
         })
         .attr("width", chartInnerWidth / dcSectors.length - 1)
+        .on("mouseover", highlight)
         .attr("x", function(d, i){
             return i * (chartInnerWidth / dcSectors.length) + leftPadding;
         })
@@ -181,13 +185,16 @@ function setChart(dcSectors, colorScale){
         .style("fill", function(d){
             return colorScale(d.properties[expressed]);
         });
+;
 
     // create a text element for the chart title
     var chartTitle = chart.append("text")
         .attr("x", 40)
         .attr("y", 40)
+        .attr("width", chartInnerWidth)
+        .attr("height", "auto")
         .attr("class", "chartTitle")
-        .text("Number of " + alias + " (per 1,000 people) in 2019");
+        .text("Number of " + fieldNameArray[expressed] + " (per 1,000 people) in 2019");
 
     // create vertical axis generator
     var yAxis = d3.axisLeft()
@@ -248,7 +255,7 @@ function changeAttribute(attribute, dcSectors){
 
 // function to position, size, and color bars in chart
 function updateChart(bars, n, colorScale){
-    //position bars
+    // position bars
     bars.attr("x", function(d, i){
         return i * (chartInnerWidth / n) + leftPadding;
         })
@@ -270,8 +277,17 @@ function updateChart(bars, n, colorScale){
         });
 
     var chartTitle = d3.select(".chartTitle")
-        .text("Number of " + alias + " (per 1,000 people) in 2019");
+        .text("Number of " + fieldNameArray[expressed] + " (per 1,000 people) in 2019");
 }; // end of updateChart
+
+// function to highlight enumeration units and bars
+function highlight(props){
+    // change stroke
+    console.log(props.SECTOR)
+    var selected = d3.selectAll("._" + props.SECTOR)
+        .style("stroke", "blue")
+        .style("stroke-width", "2");
+};
 
 // function to create color scale generator
 function makeColorScale(data){
