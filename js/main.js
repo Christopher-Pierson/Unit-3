@@ -91,6 +91,7 @@ function setMap(){
       // add coordinated visualization to the map
       setChart(dc.objects.DC_PopoSec_Crime19.geometries, colorScale);
 
+      // add dropdown menu
       createDropdown(dcSectors)
     };
 }; // end of setMap
@@ -219,6 +220,8 @@ function changeAttribute(attribute, dcSectors){
 
     // recolor enumeration units
     var sectors = d3.selectAll(".sectors")
+        .transition()
+        .duration(1000)
         .style("fill", function(d){
             var value = d.properties[expressed];
             if(value) {
@@ -233,7 +236,12 @@ function changeAttribute(attribute, dcSectors){
         //re-sort bars
         .sort(function(a, b){
             return b.properties[expressed] - a.properties[expressed];
-        });
+        })
+        .transition() //add animation
+        .delay(function(d, i){
+            return i * 20
+        })
+        .duration(500);
 
         updateChart(bars, dcSectors.length, colorScale);
 }; //end of changeAttribute
