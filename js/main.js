@@ -10,7 +10,6 @@ var attrArray = ["ADW_per1k", "MVT_per1k", "BRG_per1k", "Rob_per1k", "Hom_per1k"
 var fieldNum = 0 // set index of interest from arrays
 var expressed = attrArray[fieldNum]; // initial attribute
 var fieldNameArray = {"ADW_per1k": "Assaults w/ Deadly Weapon", "MVT_per1k": "Motor Vehicle Thefts", "BRG_per1k": "Burglaries", "Rob_per1k": "Robberies", "Hom_per1k": "Homicides", "SA_per1k": "Sexual Assaults"}; //list of attributes
-var alias = fieldNameArray[fieldNum]; // initial attribute
 
 // chart frame dimensions
 var chartWidth = window.innerWidth * 0.425,
@@ -112,11 +111,18 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
             	return colorScale(d.properties[expressed]);
             } else {
             	return "#ccc";
-            }
+            };
       })
       .on("mouseover", function(d){
             highlight(d.properties);
+      })
+      .on("mouseout", function(d){
+            dehighlight(d.properties);
       });
+
+    // add style descriptor to each path
+    var desc = sectors.append("desc")
+      .text('{"stroke": "#000", "stroke-width": "0.5px"}');
 }; // end of setEnumerationUnits
 
 // function to create a dropdown menu for attribute selection
@@ -169,10 +175,9 @@ function setChart(dcSectors, colorScale){
             return a.properties[expressed]-b.properties[expressed]
         })
         .attr("class", function(d){
-            return "bar " + d.properties;
+            return "bar _" + d.properties.SECTOR;
         })
         .attr("width", chartInnerWidth / dcSectors.length - 1)
-        .on("mouseover", highlight)
         .attr("x", function(d, i){
             return i * (chartInnerWidth / dcSectors.length) + leftPadding;
         })
@@ -184,8 +189,13 @@ function setChart(dcSectors, colorScale){
         })
         .style("fill", function(d){
             return colorScale(d.properties[expressed]);
-        });
-;
+        })
+        .on("mouseover", highlight)
+        .on("mouseout", dehighlight);
+
+    // add style descriptor to each rect
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
 
     // create a text element for the chart title
     var chartTitle = chart.append("text")
@@ -283,10 +293,30 @@ function updateChart(bars, n, colorScale){
 // function to highlight enumeration units and bars
 function highlight(props){
     // change stroke
-    console.log(props.SECTOR)
     var selected = d3.selectAll("._" + props.SECTOR)
         .style("stroke", "blue")
         .style("stroke-width", "2");
+};
+
+// function to reset the element style on mouseout
+function dehighlight(props){
+    var selected = d3.selectAll("._" + props.SECTOR)
+        .style("stroke", function(){
+            return getStyle(this, "stroke")
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width")
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
 };
 
 // function to create color scale generator
