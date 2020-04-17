@@ -37,7 +37,7 @@ function setMap(){
         height = 463;
 
     // create new svg container for the map
-    var map = d3.select("body")
+    var map = d3.select("#mydiv")
       .append("svg")
       .attr("class", "map")
       .attr("width", width)
@@ -48,7 +48,7 @@ function setMap(){
       .center([0, 38.91]) //latitude of center
       .rotate([77.02, 0, 0]) //longitude of center * -1
       .parallels([38.88, 39.94]) //adjusted to minimize distortion
-      .scale(100000)
+      .scale(120000)
       .translate([width / 2, height / 2]);
 
     var path = d3.geoPath()
@@ -118,7 +118,8 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
       })
       .on("mouseout", function(d){
             dehighlight(d.properties);
-      });
+      })
+      .on("mousemove", moveLabel);
 
     // add style descriptor to each path
     var desc = sectors.append("desc")
@@ -128,7 +129,7 @@ function setEnumerationUnits(dcSectors, map, path, colorScale){
 // function to create a dropdown menu for attribute selection
 function createDropdown(dcSectors){
     // add select element
-    var dropdown = d3.select("body")
+    var dropdown = d3.select("#mydiv")
         .append("select")
         .attr("class", "dropdown")
         .on("change", function(){
@@ -139,7 +140,7 @@ function createDropdown(dcSectors){
     var titleOption = dropdown.append("option")
         .attr("class", "titleOption")
         .attr("disabled", "true")
-        .text("Select Attribute");
+        .text("Select Crime Type");
 
     // add attribute name options
     var attrOptions = dropdown.selectAll("attrOptions")
@@ -147,13 +148,13 @@ function createDropdown(dcSectors){
         .enter()
         .append("option")
         .attr("value", function(d){ return d })
-        .text(function(d){ return d });
+        .text(function(d){ return fieldNameArray[d] });
 };
 
 // function to create coordinated bar chart
 function setChart(dcSectors, colorScale){
     // create a second svg element to hold the bar chart
-    var chart = d3.select("body")
+    var chart = d3.select("#mydiv")
         .append("svg")
         .attr("width", chartWidth)
         .attr("height", chartHeight)
@@ -190,8 +191,13 @@ function setChart(dcSectors, colorScale){
         .style("fill", function(d){
             return colorScale(d.properties[expressed]);
         })
-        .on("mouseover", highlight)
-        .on("mouseout", dehighlight);
+        .on("mouseover", function(d){
+              highlight(d.properties);
+        })
+        .on("mouseout", function(d){
+              dehighlight(d.properties);
+        })
+        .on("mousemove", moveLabel);
 
     // add style descriptor to each rect
     var desc = bars.append("desc")
@@ -287,15 +293,16 @@ function updateChart(bars, n, colorScale){
         });
 
     var chartTitle = d3.select(".chartTitle")
-        .text("Number of " + fieldNameArray[expressed] + " (per 1,000 people) in 2019");
+        .text(fieldNameArray[expressed] + " (per 1,000 people)");
 }; // end of updateChart
 
 // function to highlight enumeration units and bars
 function highlight(props){
     // change stroke
     var selected = d3.selectAll("._" + props.SECTOR)
-        .style("stroke", "blue")
-        .style("stroke-width", "2");
+        .style("stroke", "cyan")
+        .style("stroke-width", "3");
+    setLabel(props);
 };
 
 // function to reset the element style on mouseout
@@ -307,6 +314,9 @@ function dehighlight(props){
         .style("stroke-width", function(){
             return getStyle(this, "stroke-width")
         });
+    // remove info label
+    d3.select(".infolabel")
+        .remove();
 
     function getStyle(element, styleName){
         var styleText = d3.select(element)
@@ -317,6 +327,53 @@ function dehighlight(props){
 
         return styleObject[styleName];
     };
+};
+
+// function to create dynamic label
+function setLabel(props){
+    // label content
+    // var labelAttribute = "<h2>" + props[expressed] +
+    //     "</h2><b>" + expressed + "</b>" + "<br>" + "Police Sector: " + props.SECTOR + "</br>";
+
+    var labelAttribute = "<p>" + "Police Sector: <b>" + props.SECTOR +
+           "</b><br>Crime: <b>" + fieldNameArray[expressed]+ "</b><br>Incident Rate: <b>" +
+           props[expressed] + "</b></br>" + "</p>";
+
+    // create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.SECTOR + "_label")
+        .html(labelAttribute);
+
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(props.name);
+};
+
+// function to move info label with mouse
+function moveLabel(){
+    // get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    // use coordinates of mousemove event to set label coordinates
+    var x1 = d3.event.clientX + 10,
+        y1 = d3.event.clientY - 75,
+        x2 = d3.event.clientX - labelWidth - 10,
+        y2 = d3.event.clientY + 25;
+
+    // horizontal label coordinate, testing for overflow
+    var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1;
+    // vertical label coordinate, testing for overflow
+    var y = d3.event.clientY < 75 ? y2 : y1;
+
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
 };
 
 // function to create color scale generator
